@@ -125,7 +125,10 @@ namespace Multiscale_Modelling
                     rysuj_ziarna(BmpTest);
                 else
                     rysuj_ziarna(DrawArea);
-                Thread.Sleep(1000);
+                if (GrainBondaryMethod)
+                    Thread.Sleep(2);
+                else
+                    Thread.Sleep(1000);
             }
         }
 
@@ -373,7 +376,9 @@ namespace Multiscale_Modelling
                 }
             }
 
-
+            bool circleAfter = false;
+            if (isCircle)
+                circleAfter = true;
             for (int i=0; i<r2; i++)
             {
                 for(int j=0; j<r1; j++)
@@ -382,8 +387,22 @@ namespace Multiscale_Modelling
                     {
                         for (int d = sizeOfInclusions - 1; d >= 0; d--)
                         {
-                            if (helpBoundaryTable[i, j] == 1)
-                                boundaryTable[i + w, j + d] = 1000;
+                            if (circleAfter)
+                            {
+                                if(helpBoundaryTable[i,j] == 1)
+                                {
+                                    if ((w < Math.Abs((sizeOfInclusions - 1) / 2) && d < Math.Abs((sizeOfInclusions - 1) / 2) && w * d == 0) || (w < Math.Abs((sizeOfInclusions - 1) / 2) && d > Math.Abs((sizeOfInclusions - 1) / 2) && (w % (sizeOfInclusions - 1) == 0 || d % (sizeOfInclusions - 1) == 0)) || (w > Math.Abs((sizeOfInclusions - 1) / 2) && d < Math.Abs((sizeOfInclusions - 1) / 2) && (w % (sizeOfInclusions - 1) == 0 || d % (sizeOfInclusions - 1) == 0)) || (w > Math.Abs((sizeOfInclusions - 1) / 2) && d > Math.Abs((sizeOfInclusions - 1) / 2) && (w % (sizeOfInclusions - 1) == 0 || d % (sizeOfInclusions - 1) == 0)))
+                                        boundaryTable[i + w, j + d] = 0;
+                                    else
+                                        boundaryTable[i + w, j + d] = 1000;
+                                }
+                                
+                            }
+                            else
+                            {
+                                if (helpBoundaryTable[i, j] == 1)
+                                    boundaryTable[i + w, j + d] = 1000;
+                            }
                         }
                     }
                 }
@@ -508,6 +527,8 @@ namespace Multiscale_Modelling
                 th.Start();
             }
         }
+
+        
 
         private int[,] generateGrainsStructureTable(int[,] table)
         {
@@ -949,6 +970,7 @@ namespace Multiscale_Modelling
         private void button2_Click(object sender, EventArgs e)
         {
             rozrost_ziaren = false;
+            GrainBondaryMethod = false;
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -959,6 +981,10 @@ namespace Multiscale_Modelling
                 Thread th = new Thread(nowy_watek);
                 th.Start();
             }
+        }
+        private void button13_Click(object sender, EventArgs e)//Reset
+        {
+            Application.Restart();
         }
 
         private void Form1_Load(object sender, EventArgs e)
