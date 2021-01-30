@@ -56,10 +56,12 @@ namespace Multiscale_Modelling
         int selectedColorDualPhase;
         bool gotColorDualPhase = false, readyForGrowing = false;
         int numberOfGrainsSecondGrowth;
-        int[,] helpTable, helpTableOnlyGrains, mergedTable;
+        int[,] helpTable, helpTableOnlyGrains, mergedTable, helpArraySubstructure, blankToFillArray, Grains, localSubstructureOneGrain;
         int GBsize;
         int[,] borderTable, helpBorderTable;
         bool secondGrowed = false, selectGrainsToClearSpace = false;
+        int numberOfLeftGrains, localValue;
+        int indexValueColor = 100;
         public Form1()
         {
             InitializeComponent();
@@ -103,6 +105,7 @@ namespace Multiscale_Modelling
             Random rand = new Random();
             if(importedBMP == false)
                 ilosc = int.Parse(textBox3.Text);
+            numberOfLeftGrains = ilosc;
             for (int i = 1; i < ilosc + 1; i++)
             {
                 int a = rand.Next(r2);
@@ -177,26 +180,50 @@ namespace Multiscale_Modelling
                     {
                         for (int j = 0; j < r1; j++)
                         {
-                            if(helpTable[i,j] != 0)
+                            if (comboBox1.SelectedItem.ToString() == "Substructure")
                             {
-                                for (int k = 0; k < 1001; k++)
+                                if (localSubstructureOneGrain[i, j] != 0)
                                 {
-                                    if (helpTable[i, j] == k)
-                                        grp.FillRectangle(solidBrushes[k], j * size_x, i * size_y, size_x, size_y);
+                                    for (int k = 0; k < 1001; k++)
+                                    {
+                                        if (Grains[i, j] == k)
+                                            grp.FillRectangle(solidBrushes[k], j * size_x, i * size_y, size_x, size_y);
+                                    }
+                                }
+                                else
+                                {
+                                    for (int k = 0; k < 1001; k++)
+                                    {
+                                        if (blankToFillArray[i, j] == k)
+                                            grp.FillRectangle(solidBrushes[k], j * size_x, i * size_y, size_x, size_y);
+                                    }
                                 }
                             }
                             else
                             {
-                                for (int k = 0; k < 1001; k++)
+                                if (helpTable[i, j] != 0)
                                 {
-                                    if (helpTableOnlyGrains[i, j] == k)
-                                        grp.FillRectangle(solidBrushes[k], j * size_x, i * size_y, size_x, size_y);
+                                    for (int k = 0; k < 1001; k++)
+                                    {
+                                        if (helpTable[i, j] == k)
+                                            grp.FillRectangle(solidBrushes[k], j * size_x, i * size_y, size_x, size_y);
+                                    }
+                                }
+                                else
+                                {
+                                    for (int k = 0; k < 1001; k++)
+                                    {
+                                        if (helpTableOnlyGrains[i, j] == k)
+                                            grp.FillRectangle(solidBrushes[k], j * size_x, i * size_y, size_x, size_y);
+                                    }
                                 }
                             }
+
                         }
                     }
+                    
                     if (periodyczne)
-                        helpTableOnlyGrains = s.sprawdz_warunki_brzegowe_moor_periodyczne(helpTableOnlyGrains, r2, r1);
+                        Grains = s.sprawdz_warunki_brzegowe_moor_periodyczne(Grains, r2, r1);
                     else
                         helpTableOnlyGrains = s.sprawdz_warunki_brzegowe_moor_absorbujace(helpTableOnlyGrains, r2, r1);
                 }
@@ -494,9 +521,94 @@ namespace Multiscale_Modelling
                     for (int j = 0; j < r1; j++)
                         helpTable[i, j] = tableDualPhase[i, j];
 
-            if (comboBox1.SelectedItem.ToString() == "Substructure")
-                tableStructure = generateGrainsStructureTable(tableStructure);
-            else
+            helpArraySubstructure = new int[r2, r1];
+            for (int i = 0; i < r2; i++)
+                for (int j = 0; j < r1; j++)
+                    helpArraySubstructure[i, j] = tablica[i, j];
+
+            for (int i = 0; i < r2; i++)
+                for (int j = 0; j < r1; j++)
+                    if(helpArraySubstructure[i,j] == helpTable[i,j])
+                        helpArraySubstructure[i, j] = 0;
+            
+            localValue = 1;
+            bool localFlag = false;
+            for(int i=0; i<r2; i++)
+            {
+                for(int j=0; j<r1; j++)
+                {
+                    if (localFlag == false)
+                    {
+                        if (helpArraySubstructure[i, j] != localValue)
+                        {
+                            localValue++;
+                            localFlag = true;
+                        }
+                    }
+                    
+                }
+            }
+            int[,] localSubstructure = new int[r2, r1];
+
+            for(int i=0; i<r2; i++)
+            {
+                for(int j=0; j<r1; j++)
+                {
+                    if (helpArraySubstructure[i, j] == localValue)
+                        localSubstructure[i, j] = helpArraySubstructure[i,j];
+                    else
+                        localSubstructure[i, j] = 0;
+                }
+            }
+
+            blankToFillArray = new int[r2, r1];
+            for(int i=0; i<r2; i++)
+            {
+                for(int j=0; j<r1; j++)
+                {
+                    blankToFillArray[i, j] = helpArraySubstructure[i,j];
+                }
+            }
+
+            localSubstructureOneGrain = new int[r2, r1];
+            for (int i = 0; i < r2; i++)
+            {
+                for (int j = 0; j < r1; j++)
+                {
+                    localSubstructureOneGrain[i,j] = localSubstructure[i,j];
+                }
+            }
+            localSubstructure = generateGrainsStructureTable(localSubstructure);
+            Grains = new int[r2, r1];
+            for (int i = 0; i < r2; i++)
+                for (int j = 0; j < r1; j++)
+                {
+                    Grains[i, j] = 0;
+                }
+
+            for (int i=0; i<r2; i++)
+            {
+                for(int j=0; j<r1; j++)
+                {
+                    if (localSubstructureOneGrain[i, j] != localSubstructure[i, j])
+                        Grains[i,j] = localSubstructure[i, j];
+                }
+            }
+
+            for(int i=0; i<r2; i++)
+            {
+                for(int j=0; j<r1; j++)
+                {
+                    blankToFillArray[i, j] = tablica[i, j];
+                    if (localSubstructureOneGrain[i, j] != 0)
+                        blankToFillArray[i, j] = 0;
+                    if (Grains[i, j] != 0)
+                        blankToFillArray[i, j] = Grains[i, j];
+
+                }
+            }
+
+            if (comboBox1.SelectedItem.ToString() == "Dual Phase")
                 tableDualPhase = generateGrainsStructureTable(tableDualPhase);
 
             helpTableOnlyGrains = new int[r2, r1];
@@ -508,17 +620,12 @@ namespace Multiscale_Modelling
                         helpTableOnlyGrains[i, j] = 0;
                     else
                     {
-                        if (comboBox1.SelectedItem.ToString() == "Substructure")
-                        {
-                            //MessageBox.Show("Test3");
-                            helpTableOnlyGrains[i, j] = tableStructure[i, j];
-                        }
-                        else
+                        if (comboBox1.SelectedItem.ToString() == "Dual Phase")
                             helpTableOnlyGrains[i, j] = tableDualPhase[i, j];
                     }
                 }
             }
-
+            
             readyForGrowing = true;
             rozrost_ziaren = true;
             if (rozrost_ziaren)
@@ -539,7 +646,7 @@ namespace Multiscale_Modelling
             {
                 int a = rand.Next(r2);
                 int b = rand.Next(r1);
-                if (table[a, b] == 0)
+                if (table[a, b] != 0)//Zmienić na różne od zera zera żeby w obrębie ziarna wygenerować nowe ziarna
                 {
                     bool flag = true;
                     for (int k = 0; k < r2; k++)
@@ -558,7 +665,10 @@ namespace Multiscale_Modelling
                         }
                     }
                     if (flag)
-                        table[a, b] = i;
+                    {
+                        table[a, b] = indexValueColor;
+                        indexValueColor += 30;
+                    }
                     else
                         added++;
                 }
@@ -567,6 +677,9 @@ namespace Multiscale_Modelling
                     if (i > 1)
                         i--;
                 }
+
+                if (indexValueColor == i)
+                    added++;
             }
             return table;
         }
@@ -626,6 +739,7 @@ namespace Multiscale_Modelling
                     int i_i = (int)i_f;
 
                     int currentColor = tablica[i_i, j_i];
+                    numberOfLeftGrains--;
 
                     for (int i = 0; i < r2; i++)
                         for (int j = 0; j < r1; j++)
